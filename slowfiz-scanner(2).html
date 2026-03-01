@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slowfiz Scanner — Anti-Cheat Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #06080d;
+    --bg2:      #0a0e17;
+    --panel:    #0d1220;
+    --border:   #1a2540;
+    --acc:      #1a6bff;
+    --acc2:     #3d8fff;
+    --red:      #f04040;
+    --purple:   #9b3fff;
+    --green:    #1fd470;
+    --yellow:   #f5cc2a;
+    --dim:      #4a5570;
+    --text:     #d8dff0;
+    --mono:     'Share Tech Mono', monospace;
+    --head:     'Exo 2', sans-serif;
+    --body:     'Rajdhani', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── Noise overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Grid background ── */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(26,107,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(26,107,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Layout ── */
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(6,8,13,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  nav .inner {
+    max-width: 1100px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+  }
+  .nav-logo {
+    font-family: var(--head);
+    font-weight: 900; font-size: 1.2rem; letter-spacing: 0.08em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nav-logo span { color: var(--acc2); }
+  .nav-logo small { color: var(--dim); font-weight: 400; font-size: 0.75rem; letter-spacing: 0.2em; }
+  nav ul { display: flex; gap: 28px; list-style: none; }
+  nav a { color: var(--dim); text-decoration: none; font-size: 0.9rem; letter-spacing: 0.05em; transition: color .2s; font-weight: 600; }
+  nav a:hover { color: var(--acc2); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 120px 0 80px;
+    position: relative;
+  }
+
+  /* Glow blobs */
+  .blob {
+    position: absolute; border-radius: 50%;
+    filter: blur(120px); pointer-events: none;
+  }
+  .blob-1 { width: 600px; height: 600px; background: rgba(26,107,255,0.12); top: -100px; right: -200px; }
+  .blob-2 { width: 400px; height: 400px; background: rgba(155,63,255,0.08); bottom: 0; left: -100px; }
+
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(26,107,255,0.1);
+    border: 1px solid rgba(26,107,255,0.3);
+    border-radius: 4px; padding: 4px 12px;
+    font-family: var(--mono); font-size: 0.75rem;
+    color: var(--acc2); margin-bottom: 28px;
+    animation: fadeDown .6s ease both;
+  }
+  .hero-tag::before { content: '▶'; font-size: 0.6rem; }
+
+  .hero h1 {
+    font-family: var(--head);
+    font-size: clamp(2.8rem, 6vw, 5.5rem);
+    font-weight: 900; line-height: 1.0;
+    letter-spacing: -0.02em;
+    animation: fadeDown .6s .1s ease both;
+  }
+  .hero h1 .hi { color: var(--acc); }
+  .hero h1 .red { color: var(--red); }
+
+  .hero-sub {
+    font-size: 1.1rem; color: var(--dim);
+    max-width: 540px; margin: 20px 0 40px;
+    font-weight: 500;
+    animation: fadeDown .6s .2s ease both;
+  }
+
+  .hero-btns {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    animation: fadeDown .6s .3s ease both;
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; border-radius: 6px;
+    font-family: var(--body); font-weight: 700;
+    font-size: 0.95rem; letter-spacing: 0.05em;
+    text-decoration: none; cursor: pointer; border: none;
+    transition: transform .15s, box-shadow .15s, background .15s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+
+  .btn-primary {
+    background: var(--acc);
+    color: #fff;
+    box-shadow: 0 0 30px rgba(26,107,255,0.4);
+  }
+  .btn-primary:hover { background: var(--acc2); box-shadow: 0 0 40px rgba(26,107,255,0.6); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--acc); color: var(--acc2); }
+
+  /* ── Stats row ── */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; margin: 60px 0 0;
+    animation: fadeDown .6s .4s ease both;
+  }
+  .stat {
+    background: var(--panel); padding: 24px 20px;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: var(--head); font-size: 2.2rem; font-weight: 900;
+    color: var(--acc2); display: block;
+  }
+  .stat-label { font-size: 0.8rem; color: var(--dim); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* ── Section ── */
+  section { padding: 100px 0; }
+  .section-tag {
+    font-family: var(--mono); font-size: 0.72rem; color: var(--acc);
+    letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px;
+  }
+  h2 {
+    font-family: var(--head); font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 900; line-height: 1.1; letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .section-sub { color: var(--dim); max-width: 520px; font-size: 1rem; font-weight: 500; }
+
+  /* ── What it does ── */
+  .features {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    margin-top: 52px;
+  }
+  .feature {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 24px;
+    position: relative; overflow: hidden;
+    transition: border-color .2s, transform .2s;
+  }
+  .feature:hover { border-color: var(--acc); transform: translateY(-4px); }
+  .feature::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--acc), transparent);
+    opacity: 0; transition: opacity .2s;
+  }
+  .feature:hover::before { opacity: 1; }
+  .feat-icon {
+    font-size: 1.6rem; margin-bottom: 16px; display: block;
+    width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+    background: rgba(26,107,255,0.1); border-radius: 8px;
+  }
+  .feat-icon.red  { background: rgba(240,64,64,0.1); }
+  .feat-icon.purple { background: rgba(155,63,255,0.1); }
+  .feat-icon.green  { background: rgba(31,212,112,0.1); }
+  .feat-icon.yellow { background: rgba(245,204,42,0.1); }
+  .feat-icon.orange { background: rgba(255,140,0,0.12); }
+  .feature h3 {
+    font-family: var(--head); font-weight: 700; font-size: 1rem;
+    letter-spacing: 0.03em; margin-bottom: 8px;
+  }
+  .feature p { font-size: 0.88rem; color: var(--dim); line-height: 1.6; }
+
+  /* ── Color legend ── */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px;
+  }
+  .badge {
+    padding: 4px 10px; border-radius: 4px;
+    font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+  }
+  .badge.red    { background: rgba(240,64,64,0.15);  color: #f04040; border: 1px solid rgba(240,64,64,0.3); }
+  .badge.purple { background: rgba(155,63,255,0.15); color: #b060ff; border: 1px solid rgba(155,63,255,0.3); }
+  .badge.yellow { background: rgba(245,204,42,0.15); color: #f5cc2a; border: 1px solid rgba(245,204,42,0.3); }
+  .badge.orange { background: rgba(255,140,0,0.15);  color: #ff9020; border: 1px solid rgba(255,140,0,0.3); }
+  .badge.green  { background: rgba(31,212,112,0.15); color: #1fd470; border: 1px solid rgba(31,212,112,0.3); }
+
+  /* ── Tutorial ── */
+  .steps { margin-top: 52px; display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: grid; grid-template-columns: 64px 1fr;
+    gap: 0 24px; position: relative;
+  }
+  .step:not(:last-child) .step-line {
+    position: absolute; left: 31px; top: 64px; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .step-num {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--panel); border: 2px solid var(--acc);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--head); font-weight: 900; font-size: 1.3rem;
+    color: var(--acc2); flex-shrink: 0; position: relative; z-index: 1;
+    box-shadow: 0 0 20px rgba(26,107,255,0.2);
+  }
+  .step-body { padding: 16px 0 48px; }
+  .step-body h3 {
+    font-family: var(--head); font-weight: 700; font-size: 1.1rem;
+    margin-bottom: 6px; color: #fff;
+  }
+  .step-body p { color: var(--dim); font-size: 0.92rem; }
+
+  .code-block {
+    background: #080c14; border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 20px; margin-top: 12px;
+    font-family: var(--mono); font-size: 0.82rem; color: var(--acc2);
+    overflow-x: auto;
+  }
+  .code-block .comment { color: var(--dim); }
+
+  /* ── Download section ── */
+  .dl-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 48px;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 32px; align-items: center;
+    position: relative; overflow: hidden;
+  }
+  .dl-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--acc), var(--purple), var(--acc));
+  }
+  .dl-glow {
+    position: absolute; top: -60px; right: -60px;
+    width: 300px; height: 300px;
+    background: rgba(26,107,255,0.08); border-radius: 50%;
+    filter: blur(60px); pointer-events: none;
+  }
+  .dl-title {
+    font-family: var(--head); font-size: 1.8rem; font-weight: 900;
+    margin-bottom: 8px;
+  }
+  .dl-meta { color: var(--dim); font-size: 0.88rem; margin-bottom: 24px; }
+  .dl-meta span { margin-right: 20px; }
+  .dl-meta span::before { margin-right: 6px; }
+  .dl-notes { font-size: 0.82rem; color: var(--dim); margin-top: 16px; }
+  .dl-notes li { margin-bottom: 4px; list-style: none; padding-left: 16px; position: relative; }
+  .dl-notes li::before { content: '→'; position: absolute; left: 0; color: var(--acc); }
+
+  .dl-right { text-align: center; }
+  .dl-size {
+    font-family: var(--mono); font-size: 0.75rem; color: var(--dim);
+    margin-top: 10px;
+  }
+
+  /* ── Warning box ── */
+  .warn {
+    background: rgba(245,204,42,0.07);
+    border: 1px solid rgba(245,204,42,0.25);
+    border-radius: 8px; padding: 16px 20px;
+    font-size: 0.88rem; color: var(--yellow);
+    margin-top: 20px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .warn strong { display: block; margin-bottom: 2px; }
+
+  /* ── Findings explained ── */
+  .findings-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 14px; margin-top: 40px;
+  }
+  .finding-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px 22px;
+    display: flex; gap: 16px; align-items: flex-start;
+  }
+  .finding-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 4px;
+  }
+  .finding-card h4 { font-family: var(--head); font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+  .finding-card p { font-size: 0.83rem; color: var(--dim); }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0; margin-top: 60px;
+    text-align: center; color: var(--dim);
+    font-size: 0.83rem; font-family: var(--mono);
+    position: relative; z-index: 1;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 0;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  /* Scan line animation on hero */
+  @keyframes scanline {
+    0%   { top: -2px; }
+    100% { top: 100%; }
+  }
+  .scanline {
+    position: absolute; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(26,107,255,0.15), transparent);
+    animation: scanline 4s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Terminal blink */
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .cursor { animation: blink 1s step-end infinite; color: var(--acc); }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .features { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2,1fr); }
+    .dl-card { grid-template-columns: 1fr; }
+    .findings-grid { grid-template-columns: 1fr; }
+    nav ul { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="inner">
+    <div class="nav-logo">
+      <span>SLOWFIZ</span>
+      <small>SCANNER</small>
+    </div>
+    <ul>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#tutorial">Tutorial</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#download">Download</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero wrap">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="scanline"></div>
+
+  <div class="hero-tag">slowfiz.net — Official Anti-Cheat Tool</div>
+  <h1>
+    Cheat Detection<br>
+    <span class="hi">without compromise</span><span class="red">.</span>
+  </h1>
+  <p class="hero-sub">
+    The Slowfiz Scanner scans your system for Minecraft cheats
+    and deleted evidence — in under 60 seconds.
+  </p>
+  <div class="hero-btns">
+    <a href="#download" class="btn btn-primary">⬇ Download Now</a>
+    <a href="#tutorial" class="btn btn-ghost">Read Guide</a>
+  </div>
+
+  <div class="stats reveal">
+    <div class="stat">
+      <span class="stat-val">6</span>
+      <span class="stat-label">Scan Modules</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val">60s</span>
+      <span class="stat-label">Scan Duration</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val">0</span>
+      <span class="stat-label">False Bans</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val">100%</span>
+      <span class="stat-label">Local — No Upload</span>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="wrap">
+    <p class="section-tag reveal">// what it detects</p>
+    <h2 class="reveal">6 Modules. No Chance for Cheaters.</h2>
+    <p class="section-sub reveal">Each module works independently and checks a different area of your system.</p>
+
+    <div class="feature reveal" style="max-width:680px; margin-top:52px;">
+      <div class="feat-icon" style="background:rgba(26,107,255,0.12)">🛡️</div>
+      <h3>6 Independent Scan Methods</h3>
+      <p>The scanner runs <strong>6 different methods</strong> across various areas of your system to detect cheat-related activity — past or present. Each method checks a unique location independently, making it very difficult to hide anything.</p>
+    </div>
+
+    <div style="margin-top:40px" class="reveal">
+      <p class="section-tag">// result colors</p>
+      <div class="legend">
+        <span class="badge red">EVIDENCE WITHOUT DOUBT</span>
+        <span class="badge purple">INJECT / Cheat-Binary</span>
+        <span class="badge yellow">MAYBE FLAGS</span>
+        <span class="badge orange">Deleted / Log-Wiping</span>
+        <span class="badge green">CLEAN</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TUTORIAL -->
+<section id="tutorial">
+  <div class="wrap">
+    <p class="section-tag reveal">// guide</p>
+    <h2 class="reveal">4 Steps to Complete a Scan.</h2>
+    <p class="section-sub reveal">No technical knowledge required. Just download and run.</p>
+
+    <div class="steps" style="margin-top:52px">
+
+      <div class="step reveal">
+        <div class="step-line"></div>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Download the Scanner</h3>
+          <p>Download <strong>SlowfizScanner.exe</strong>. The file is provided directly from slowfiz.net — no installer needed.</p>
+          <div class="warn">
+            <span>⚠️</span>
+            <div><strong>Windows SmartScreen</strong> Windows Defender or SmartScreen may show a warning because the EXE is not digitally signed. Click <em>"More info" → "Run anyway"</em>.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step reveal">
+        <div class="step-line"></div>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Read the Tutorial &amp; Enter your IGN</h3>
+          <p>On first launch, a 3-page tutorial will appear. Afterwards, enter your Minecraft in-game name (IGN). The name is stored locally and will appear in the result report.</p>
+          <div class="code-block">
+            <span class="comment">// Example IGN input</span><br>
+            IGN: <span style="color:#fff">Notch</span><span class="cursor">_</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step reveal">
+        <div class="step-line"></div>
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Start the Scan &amp; Wait</h3>
+          <p>Click <strong>"Start Scan"</strong>. The scanner will search your system. The process takes <strong>30–60 seconds</strong>.</p>
+          <div class="code-block">
+            [INFO] Scan started — IGN: Notch<br>
+            [INFO] 3 installation(s) found.<br>
+            [SCAN] Official Minecraft → C:\Users\...<br>
+            [SCAN] Modrinth [survival] → ...<br>
+            [InjectScanner] Scanning 6 directories...<br>
+            [RecycleBinScanner] Scanning Recycle Bin...<br>
+            <span style="color:#1fd470">[DONE] Scan complete.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step reveal">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Show Results to Staff</h3>
+          <p>Switch to the <strong>"Results"</strong> tab. Take a screenshot of the entire window and send it in your Discord ticket. Click <strong>"▼"</strong> on a finding for full details and the exact file path.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FINDINGS EXPLAINED -->
+<section id="findings">
+  <div class="wrap">
+    <p class="section-tag reveal">// findings explained</p>
+    <h2 class="reveal">What Do the Results Mean?</h2>
+    <p class="section-sub reveal">Each result type has a different meaning and weight.</p>
+
+    <div class="findings-grid">
+
+      <div class="finding-card reveal">
+        <div class="finding-dot" style="background:#f04040"></div>
+        <div>
+          <h4>EVIDENCE WITHOUT DOUBT</h4>
+          <p>A cheat mod was active while you played on slowfiz.net, or a cheat binary was found with injection-related strings. Ban without discussion.</p>
+        </div>
+      </div>
+
+      <div class="finding-card reveal">
+        <div class="finding-dot" style="background:#b060ff"></div>
+        <div>
+          <h4>INJECT — Cheat Binary</h4>
+          <p>An EXE, JAR or DLL on the system contains cheat-specific content, or the filename matches a blacklist.</p>
+        </div>
+      </div>
+
+      <div class="finding-card reveal">
+        <div class="finding-dot" style="background:#ff9020"></div>
+        <div>
+          <h4>DELETED_CHEAT / DELETED_LOG</h4>
+          <p>Cheat files or log files were found in the Recycle Bin. Actively deleting evidence shortly before a screenshare is itself a serious offense.</p>
+        </div>
+      </div>
+
+      <div class="finding-card reveal">
+        <div class="finding-dot" style="background:#f5cc2a"></div>
+        <div>
+          <h4>MAYBE FLAGS</h4>
+          <p>Suspicious mod files or logs were found, but no direct proof of active use on slowfiz.net. Staff decides on a case-by-case basis.</p>
+        </div>
+      </div>
+
+      <div class="finding-card reveal">
+        <div class="finding-dot" style="background:#1fd470"></div>
+        <div>
+          <h4>CLEAN</h4>
+          <p>No suspicious findings. No known cheat mod, no cheat binary, no deleted logs. No action needed.</p>
+        </div>
+      </div>
+
+      <div class="finding-card reveal">
+        <div class="finding-dot" style="background:#1a6bff"></div>
+        <div>
+          <h4>slowfiz Logs — Connection Proof</h4>
+          <p>Shows how many log files contain a connection to <em>slowfiz.net</em>. Confirms that you actually played on our server.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- DOWNLOAD -->
+<section id="download">
+  <div class="wrap">
+    <p class="section-tag reveal">// download</p>
+    <h2 class="reveal">Ready to Scan?</h2>
+
+    <div class="dl-card reveal">
+      <div class="dl-glow"></div>
+      <div>
+        <div class="dl-title">SlowfizScanner.exe</div>
+        <div class="dl-meta">
+          <span>🖥 Windows 10/11 x64</span>
+          <span>🔒 No Internet Access</span>
+          <span>⚡ No Installer</span>
+        </div>
+        <a href="SlowfizScanner.exe" download class="btn btn-primary" style="font-size:1.05rem; padding:16px 36px;">
+          ⬇ &nbsp;Download — SlowfizScanner.exe
+        </a>
+        <ul class="dl-notes">
+          <li>Just run it — no installation process</li>
+          <li>All data stays local on your PC</li>
+          <li>No network traffic, no telemetry</li>
+          <li>If SmartScreen warns you: "More info" → "Run anyway"</li>
+        </ul>
+      </div>
+      <div class="dl-right">
+        <div style="font-size:5rem; line-height:1; margin-bottom:12px;">🛡️</div>
+        <div class="dl-size" id="dl-label">slowfiz.net</div>
+      </div>
+    </div>
+
+    <div class="warn reveal" style="margin-top:24px">
+      <span>ℹ️</span>
+      <div>
+        <strong>Privacy</strong>
+        The scanner only reads local files and saves the result to
+        <code>%AppData%\SlowfizScanner\result.txt</code>.
+        No data is transmitted to external servers.
+        Source code is available on request from Slowfiz staff.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <span style="color:var(--acc2)">SLOWFIZ SCANNER</span>
+    &nbsp;·&nbsp; slowfiz.net
+    &nbsp;·&nbsp; For authorized screenshares on slowfiz.net only
+    &nbsp;·&nbsp; <span style="color:var(--dim)">© 2025</span>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.12 }
+  );
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Animated stat counters
+  function animateCount(el, target, suffix='') {
+    let start = 0;
+    const dur = 1400;
+    const step = ts => {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / dur, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      el.textContent = (Number.isInteger(target)
+        ? Math.round(ease * target)
+        : (ease * target).toFixed(0)) + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  const statsObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const vals = e.target.querySelectorAll('.stat-val');
+        const targets = [6, 60, 0, 100];
+        const suffixes = ['', 's', '', '%'];
+        vals.forEach((v, i) => animateCount(v, targets[i], suffixes[i]));
+        statsObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  const statsEl = document.querySelector('.stats');
+  if (statsEl) statsObserver.observe(statsEl);
+</script>
+</body>
+</html>
